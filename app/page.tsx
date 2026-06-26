@@ -13,10 +13,33 @@ export default function Home() {
       return;
     }
 
-    navigator.geolocation.getCurrentPosition(
-      () => setStatus("ok"),
-      () => setStatus("ng")
-    );
+    navigator.permissions
+      .query({ name: "geolocation" })
+      .then((result) => {
+        if (result.state === "granted") {
+          setStatus("ok");
+        } else if (result.state === "denied") {
+          setStatus("ng");
+        } else {
+          // "prompt" — まだ許可していないので初回のみ聞く
+          navigator.geolocation.getCurrentPosition(
+            () => setStatus("ok"),
+            () => setStatus("ng")
+          );
+        }
+
+        result.addEventListener("change", () => {
+          if (result.state === "granted") setStatus("ok");
+          else if (result.state === "denied") setStatus("ng");
+        });
+      })
+      .catch(() => {
+        // Permissions API非対応の場合はフォールバック
+        navigator.geolocation.getCurrentPosition(
+          () => setStatus("ok"),
+          () => setStatus("ng")
+        );
+      });
   }, []);
 
   const label = {
